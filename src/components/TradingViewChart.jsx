@@ -13,10 +13,12 @@ export default function TradingViewChart({
     data,
     chartType = 'CANDLE',
     colors = DEFAULT_COLORS,
+    extraLines = [],
 }) {
     const chartContainerRef = useRef();
     const chartRef = useRef();
     const seriesRef = useRef();
+    const extraLineRefs = useRef([]);
 
     useEffect(() => {
         if (!chartContainerRef.current) return;
@@ -73,8 +75,39 @@ export default function TradingViewChart({
         return () => {
             window.removeEventListener('resize', handleResize);
             chart.remove();
+            extraLineRefs.current = [];
         };
-    }, [chartType, colors, data]); // Re-create on data change for simplicity in debug mode
+    }, [chartType, colors, data]);
+
+    // Handle Extra Lines (Buy Price, etc.)
+    useEffect(() => {
+        if (!seriesRef.current) return;
+
+        // Cleanup old lines
+        extraLineRefs.current.forEach(line => {
+            try {
+                seriesRef.current.removePriceLine(line);
+            } catch (e) {
+                // Ignore if already removed
+            }
+        });
+        extraLineRefs.current = [];
+
+        // Add new lines
+        if (extraLines && extraLines.length > 0) {
+            extraLines.forEach(line => {
+                const priceLine = seriesRef.current.createPriceLine({
+                    price: line.price,
+                    color: line.color || '#2962FF',
+                    lineWidth: line.lineWidth || 1,
+                    lineStyle: line.lineStyle || 0, // Solid
+                    axisLabelVisible: true,
+                    title: line.title || '',
+                });
+                extraLineRefs.current.push(priceLine);
+            });
+        }
+    }, [extraLines, data]);
 
     return (
         <div ref={chartContainerRef} className="w-full h-full relative min-h-[200px]" />
