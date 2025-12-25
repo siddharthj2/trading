@@ -14,6 +14,8 @@ export default function TradingViewChart({
     chartType = 'CANDLE',
     colors = DEFAULT_COLORS,
     extraLines = [],
+    avgBuyPrice = null,
+    positionQty = 0,
 }) {
     const chartContainerRef = useRef();
     const chartRef = useRef();
@@ -93,7 +95,20 @@ export default function TradingViewChart({
         });
         extraLineRefs.current = [];
 
-        // Add new lines
+        // 1. Add Buy Price Line
+        if (avgBuyPrice !== null && positionQty > 0) {
+            const buyLine = seriesRef.current.createPriceLine({
+                price: parseFloat(avgBuyPrice),
+                color: '#8B5CF6', // Violet
+                lineWidth: 2,
+                lineStyle: 0, // Solid
+                axisLabelVisible: true,
+                title: `Avg Buy: ${parseFloat(avgBuyPrice).toFixed(2)}`,
+            });
+            extraLineRefs.current.push(buyLine);
+        }
+
+        // 2. Add other extraLines
         if (extraLines && extraLines.length > 0) {
             extraLines.forEach(line => {
                 const priceLine = seriesRef.current.createPriceLine({
@@ -107,7 +122,7 @@ export default function TradingViewChart({
                 extraLineRefs.current.push(priceLine);
             });
         }
-    }, [extraLines, data]);
+    }, [extraLines, avgBuyPrice, positionQty, data]);
 
     return (
         <div ref={chartContainerRef} className="w-full h-full relative min-h-[200px]" />
